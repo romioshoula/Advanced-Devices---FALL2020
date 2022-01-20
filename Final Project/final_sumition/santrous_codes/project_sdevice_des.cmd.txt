@@ -1,0 +1,86 @@
+File{
+   * Input Files
+   Grid="@tdr@"
+   * parameter="@parameter@"
+   * Output Files
+   Current="@plot@"
+   Plot="@tdrdat@"
+   Output="@log@"    
+}
+
+Electrode{
+   * Resistor=100 Barrier=-0.55 charge=0 current=0
+   {name="D" voltage=0.0}
+   {name="S" voltage=0.0}
+   {name="G" voltage=0.0}
+}
+
+Physics{
+    *Mobility( DopingDep HighFieldSat Enormal )
+    *we will use constant mobility
+    ConstantMobility {
+    mumax = 200e+04, 100e+02
+    Exponent = 2.5, 2.2
+    }
+    EffectiveIntrinsicDensity( OldSlotboom )
+}
+
+Plot{
+   eDensity hDensity
+   eCurrent hCurrent
+   TotalCurrent/Vector eCurrent/Vector hCurrent/Vector
+   eMobility hMobility
+   eVelocity hVelocity
+   eEnormal hEnormal
+   ElectricField/Vector Potential SpaceCharge
+   eQuasiFermi hQuasiFermi
+   Potential Doping SpaceCharge
+   DonorConcentration AcceptorConcentration
+   Doping
+   eGradQuasiFermi/Vector hGradQuasiFermi/Vector
+   eEparallel hEparalllel
+   BandGap 
+   BandGapNarrowing
+   Affinity
+   ConductionBand ValenceBand
+   eQuantumPotential
+}
+
+Math{
+   -CheckUndefinedModels
+   Number_Of_Threads=4
+   Extrapolate
+   Derivatives
+   * Avalderivatives
+   RelErrControl
+   Digits=5
+   ErRef(electron)=1.e10
+   ErRef(hole)=1.e10
+   Notdamped=50
+   Iterations=20
+   Directcurrent
+   Method=ParDiSo
+   Parallel= 2
+   *-VoronoiFaceBoxMethod
+   NaturalBoxMethod
+}
+
+Solve {
+   *- Buildup of initial solution:
+   Coupled ( Iterations= 150){ Poisson eQuantumPotential }
+   Coupled { Poisson eQuantumPotential Electron Hole }
+
+   *- Bias drain to target bias
+   Quasistationary(
+    InitialStep= 1e-3 Increment= 1.2 
+    MinStep= 1e-12 MaxStep= 0.95
+    Goal { Name= "D" Voltage= @vd@}
+   ){ Coupled { Poisson Electron Hole } }
+
+   *- Gate voltage sweep
+   Quasistationary(
+    InitialStep= 1e-3 Increment= 1.2 
+    MinStep= 1e-12 MaxStep= 0.02
+    Goal { Name= "G" Voltage=0.5}
+   ){ Coupled { Poisson Electron Hole } }
+ }

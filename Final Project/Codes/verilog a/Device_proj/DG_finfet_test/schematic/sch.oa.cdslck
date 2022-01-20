@@ -1,0 +1,16 @@
+#
+# Edit Lock-Stake file. CAUTION: Please do not change.
+#
+# Information about current Edit Lock Owner.
+#
+LockStakeVersion               1.1
+LoginName                      zcadmin
+HostName                       SYN-CadAsur-13.zewailcity.local
+ProcessIdentifier              11462
+ProcessCreationTime_UTC        1610414165
+ProcessCreationTime_Readable   Tue Jan 12 03:16:05 2021 EET
+AppIdentifier                  OA File System Design Manager
+OSType                         unix
+ReasonForPlacingEditLock       OpenAccess edit lock
+FilePathUsedToEditLock         /home/zcadmin/Desktop/devices/Device_proj/DG_finfet_test/schematic/sch.oa.cdslck
+TimeEditLocked                 Tue Jan 12 03:36:39 2021 EET

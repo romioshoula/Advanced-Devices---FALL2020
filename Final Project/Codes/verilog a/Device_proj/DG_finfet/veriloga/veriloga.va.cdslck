@@ -1,0 +1,16 @@
+#
+# Edit Lock-Stake file. CAUTION: Please do not change.
+#
+# Information about current Edit Lock Owner.
+#
+LockStakeVersion               1.1
+LoginName                      zcadmin
+HostName                       SYN-CadAsur-13.zewailcity.local
+ProcessIdentifier              11462
+ProcessCreationTime_UTC        1610414161
+ProcessCreationTime_Readable   Tue Jan 12 03:16:01 2021 EET
+AppIdentifier                  /home/zcadmin/cadence/installs/IC618/tools/dfII/bin/64bit/virtuoso
+OSType                         lnx86
+ReasonForPlacingEditLock       Text Edit
+FilePathUsedToEditLock         /home/zcadmin/Desktop/devices/Device_proj/DG_finfet/veriloga/veriloga.va
+TimeEditLocked                 Tue Jan 12 03:19:49 2021 EET

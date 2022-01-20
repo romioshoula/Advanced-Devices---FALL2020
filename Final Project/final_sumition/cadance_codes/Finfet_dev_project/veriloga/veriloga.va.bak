@@ -1,0 +1,138 @@
+// VerilogA code ahmed alaa-rami wail-mohamed hatem 
+//naneng520 project
+`include "constants.vams"
+`include "disciplines.vams"
+
+module Finfet_dev_project(S, B, G, D);
+// parameters (constants) 
+	inout 	S, G, B, D;
+	electrical 	S, G, B, D;
+	parameter real  n0=0;
+	parameter real  n1=1;
+	parameter real  mu=0.01;  // mobility 
+	parameter real 	q=1.6e-19; 
+	parameter real 	h=6.62606896e-34;
+	parameter real 	eox = 3.9;
+	parameter real 	e0 = 8.85e-12;
+	parameter real 	esi = 11.7;
+	parameter real 	Na = 1e17; 
+	parameter real 	ni = 1.5e10;
+	parameter real 	tsi = 5e-9;
+	parameter real 	tox = 2e-9;
+	parameter real 	Eg = 1.12; // bandgab
+	parameter real 	l = 3e-7;
+	parameter real	W = 6e-7; 
+	parameter real 	mo=9.109382e-31;
+	parameter real 	pi=22/7;
+
+// parameters (variables)
+	real vgs, vds; // gate and drain voltages
+	real cox, vfb, phifp, Qsdmax, Vys, Vyd, ml, mt, phims,hb ,k,phis, phi0, phipos, phineg, dx, diff, fpos, fneg, E00d, E01d,E10d, E11d, E00s, E01s, E10s, E11s,EFs,EFd,Q00s,Q00d,Q10s,Q10d,Q01s,Q01d,Q11s,Q11d,Qdtotal,Qstotal,phiss, phi0s,  phisd, phi0d,Ums,Umd, phi0new, err,E2Ds,E2Dd, i;	
+
+// solving for surface potential 
+analog function real f;
+	input phi0,vgs,vfb,Vy;
+	real  phi0,vgs,vfb,Vy, phis;
+begin
+phis= phi0 - 2* $vt * log(cos( sqrt(q*ni/ (2*esi*e0*$vt)) * exp((phi0-Vy)/ (2*$vt))*(tsi/2))); //surface potential equation 
+f= -vgs + vfb + phis + (tox*esi/eox)*sqrt((2*$vt*ni*q/(esi*e0))*( exp((phis-Vy)/$vt) - exp((phi0-Vy)/$vt) ) );
+// the function
+end
+endfunction
+	analog begin
+	vgs= V(G,S);
+	vds= V(D,S);
+	cox = (e0*eox)/tox;
+	hb=h/(2*pi);
+	Qsdmax = q*Na*tsi;
+	phifp = $vt*ln(Na/ni);
+	phims=-phifp;
+	vfb = phims- Qsdmax;
+	ml=0.98*mo;
+	mt=0.19*mo;
+ // operating voltage at source and drain
+	Vys = 0; 
+	Vyd = vds;
+// newton rapson dambed paramters 
+	i = 0;
+	phi0 = 0.2;
+	dx = 0.001;
+	err=1;
+	k=0.01;
+//source and drain surface potential
+	while(err > 0.000001 && i < 1000) 
+	 begin
+
+diff= ( f(phi0+dx , vgs, vfb, Vys) - f(phi0-dx, vgs, vfb, Vys) ) / (2*dx); // the drevative of the equation 
+
+		phi0new = phi0 - k*(f(phi0, vgs, vfb, Vys)/diff); // damped newton rapson 
+		err = abs (phi0new - phi0); 
+		phi0 = phi0new;
+		i = i+1; 
+	  end
+		phiss = phi0 - 2* $vt * log(cos( sqrt(q*ni/ (2*esi*e0*$vt))* exp((phi0-Vys)/(2*$vt))*(tsi/2)));
+		phi0s = phi0;  
+		Ums=phiss-phi0s;  //correction function 
+//drain
+	i = 0;
+	phi0 = 0.2;
+	dx = 0.001;
+	err = 1;
+	while(err > 0.000001 && i < 1000)
+	 begin
+
+diff= ( f(phi0+dx , vgs, vfb, Vyd) - f(phi0-dx , vgs, vfb, Vyd) ) / (2*dx); // dervative
+		phi0new = phi0 - k*(f(phi0, vgs, vfb, Vyd)/diff);
+		err = abs (phi0new - phi0);
+		phi0 = phi0new;
+		i = i+1;
+	  end
+		phi0d = phi0;
+		phisd =phi0 - 2* $vt * log(cos( sqrt(q*ni/ (2*esi*e0*$vt)) * exp((phi0-Vyd)/   (2*$vt))*(tsi/2)));
+		Umd=(phisd-phi0d); //correction function 
+
+// to calculate the energy levels in quantam at drain 
+E00d=(n0+1)*(n0+1)*pi*pi*hb*hb/(2*ml*tsi*tsi)/q + Umd*2*(1/(pi*pi*(0+1)*(0+1))+1/3);
+E01d=(n0+1)*(n0+1)*pi*pi*hb*hb/(2*mt*tsi*tsi)/q + Umd*2*(1/(pi*pi*(0+1)*(0+1))+1/3);
+E10d=(n1+1)*(n1+1)*pi*pi*hb*hb/(2*ml*tsi*tsi)/q + Umd*2*(1/(pi*pi*(1+1)*(1+1))+1/3);
+E11d=(n1+1)*(n1+1)*pi*pi*hb*hb/(2*mt*tsi*tsi)/q + Umd*2*(1/(pi*pi*(1+1)*(1+1))+1/3);
+// to calculate the energy levels in quantam at source
+E00s=(n0+1)*(n0+1)*pi*pi*hb*hb/(2*ml*tsi*tsi)/q + Ums*2*(1/(pi*pi*(0+1)*(0+1))+1/3);
+E01s=(n0+1)*(n0+1)*pi*pi*hb*hb/(2*mt*tsi*tsi)/q + Ums*2*(1/(pi*pi*(0+1)*(0+1))+1/3);
+E10s=(n1+1)*(n1+1)*pi*pi*hb*hb/(2*ml*tsi*tsi)/q + Ums*2*(1/(pi*pi*(1+1)*(1+1))+1/3);
+E11s=(n1+1)*(n1+1)*pi*pi*hb*hb/(2*mt*tsi*tsi)/q + Ums*2*(1/(pi*pi*(1+1)*(1+1))+1/3);
+//
+
+EFs=phiss-Eg/2; // fermi level at source 
+EFd=phisd-Eg/2-Vyd; // fermi level at drain 
+ 
+// charge per unit area at source 
+Q00s=q*q*2*4*pi*$vt*sqrt(mt*mt)/(h*h)*log(1+exp((EFs-E00s)/$vt));
+Q01s=q*q*4*4*pi*$vt*sqrt(ml*mt)/(h*h)*log(1+exp((EFs-E01s)/$vt));
+Q10s=q*q*2*4*pi*$vt*sqrt(mt*mt)/(h*h)*log(1+exp((EFs-E10s)/$vt));
+Q11s=q*q*4*4*pi*$vt*sqrt(ml*mt)/(h*h)*log(1+exp((EFs-E11s)/$vt));
+Qstotal=Q00s+Q01s+Q10s+Q11s; // total charges per unit area 
+                
+//charge per unit area at drain
+Q00d=q*q*2*4*pi*$vt*sqrt(mt*mt)/(h*h)*log(1+exp((EFd-E00d)/$vt));
+Q01d=q*q*4*4*pi*$vt*sqrt(ml*mt)/(h*h)*log(1+exp((EFd-E01d)/$vt));
+Q10d=q*q*2*4*pi*$vt*sqrt(mt*mt)/(h*h)*log(1+exp((EFd-E10d)/$vt));
+Q11d=q*q*4*4*pi*$vt*sqrt(ml*mt)/(h*h)*log(1+exp((EFd-E11d)/$vt));
+Qdtotal=Q00d+Q01d+Q10d+Q11d; // total charges per unit area 
+
+E2Ds=Qstotal/(q*1e4);
+E2Dd=Qdtotal/(q*1e4);
+
+
+// intilizing the currents 
+	I(G,S) <+ 0;
+	I(G,D) <+ 0;
+	I(G,B) <+ 0;
+	I(B,S) <+ 0;
+	I(B,D) <+ 0;
+//equation of current at drain 
+	I(D,S) <+ mu*W/l*((Qdtotal+Qstotal)/2*(phisd-phiss)-$vt*(Qdtotal-Qstotal));
+		
+	end
+	 
+endmodule

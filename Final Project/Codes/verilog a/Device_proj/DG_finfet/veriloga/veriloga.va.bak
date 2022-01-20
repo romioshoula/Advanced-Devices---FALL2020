@@ -1,0 +1,95 @@
+// VerilogA for Device_proj, DG_finfet, veriloga
+
+// VerilogA for Devices_Project
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module DG_FinFet (S, B, G, D);
+	inout 	S, G, B, D;
+	electrical 	S, G, B, D;
+	
+
+	parameter real 	e_si = 11.7;
+	parameter real 	Na = 1e18;
+	parameter real 	t_si = 1e-6;
+	parameter real 	t_ox = 1.5e-7;
+	parameter real 	e_ox = 3.9;
+	parameter real 	phi_ms = -1.03;
+	parameter real 	l = 3e-5;
+	parameter real 	e_0 = 8.85e-14;
+	parameter real 	n_i = 1.5e10;
+	parameter real 	v_thermal = 0.026;
+	parameter real 	q=1.6e-19;
+	real v_gs, v_ds;
+	real c_ox, v_fb, x_dep, phi_fp, Qsd_max, Vth, m, temp, Vys, Vyd;
+	real psi_s, psi_0,psi_pos, psi_neg, del_psi, f, dif_f, f_pos, f_neg;
+	real i;
+	real j;
+
+	analog begin
+	
+	v_gs= V(G,S);
+	v_ds= V(D,S);
+	
+	c_ox = (e_0*e_ox)/t_ox;
+	phi_fp = v_thermal*ln(Na/n_i);
+	x_dep = sqrt((4*e_si*e_0*phi_fp)/(q*Na));
+	v_fb = -phi_ms;
+	Qsd_max = q*Na*x_dep;
+	Vth = Qsd_max/c_ox + phi_ms + 2*phi_fp;
+	m = 1+3*t_ox/x_dep;
+	temp = (v_gs-Vth)/m;
+	Vys = 0;
+	Vyd = temp-sqrt(temp*temp-2*temp*v_ds+v_ds*v_ds);
+		
+
+	//Numerical NR
+	i = 0;
+	j = 0;
+	psi_0 = 0.2;
+	del_psi = 0.01;
+	
+	
+	while (i<100) begin
+    psi_s= psi_0 - 2* v_thermal * ln(cos( sqrt(q* n_i/ (2*e_si*e_0*v_thermal)) * exp((psi_0-Vys)/(2*v_thermal))* t_si/2));
+    f= -v_gs + v_fb + psi_s + t_ox*e_si/e_ox*sqrt(    2*v_thermal*n_i*q/(e_si*e_0)*(   exp((psi_s-Vys)/v_thermal) -   exp((psi_0-Vys)/v_thermal) )   );
+	psi_0=psi_0+del_psi;
+	f_pos= -v_gs + v_fb + psi_s + t_ox*e_si/e_ox*sqrt(    2*v_thermal*n_i*q/(e_si*e_0)*(   exp((psi_s-Vys)/v_thermal) -   exp((psi_0-Vys)/v_thermal) )   );
+	psi_0=psi_0-2*del_psi;
+	f_neg= -v_gs + v_fb + psi_s + t_ox*e_si/e_ox*sqrt(    2*v_thermal*n_i*q/(e_si*e_0)*(   exp((psi_s-Vys)/v_thermal) -   exp((psi_0-Vys)/v_thermal) )   );
+	psi_0=psi_0+del_psi;
+
+
+
+	dif_f = (f_pos+f_neg)/(2*del_psi);
+	psi_0 = psi_0 - (f/dif_f);
+	i = i+1;
+	end
+
+
+	while (j<100) begin
+    psi_s= psi_0 - 2* v_thermal * ln(cos( sqrt(q* n_i/ (2*e_si*e_0*v_thermal)) * exp((psi_0-Vyd)/(2*v_thermal))* t_si/2));
+    f= -v_gs + v_fb + psi_s + t_ox*e_si/e_ox*sqrt(    2*v_thermal*n_i*q/(e_si*e_0)*(   exp((psi_s-Vyd)/v_thermal) -   exp((psi_0-Vyd)/v_thermal) )   );
+	psi_0=psi_0+del_psi;
+	f_pos= -v_gs + v_fb + psi_s + t_ox*e_si/e_ox*sqrt(    2*v_thermal*n_i*q/(e_si*e_0)*(   exp((psi_s-Vyd)/v_thermal) -   exp((psi_0-Vyd)/v_thermal) )   );
+	psi_0=psi_0-2*del_psi;
+	f_neg= -v_gs + v_fb + psi_s + t_ox*e_si/e_ox*sqrt(    2*v_thermal*n_i*q/(e_si*e_0)*(   exp((psi_s-Vyd)/v_thermal) -   exp((psi_0-Vyd)/v_thermal) )   );
+	psi_0=psi_0+del_psi;
+
+
+
+	dif_f = (f_pos+f_neg)/(2*del_psi);
+	psi_0 = psi_0 - (f/dif_f);
+	j = j+1;
+	end
+
+
+
+	I(G,S) <+ 0;
+	I(G,D) <+ 0;
+	I(D,S) <+ ids1+ids2;
+		
+	end
+	 
+endmodule
